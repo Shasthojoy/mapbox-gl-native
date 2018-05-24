@@ -2,6 +2,8 @@ package com.mapbox.mapboxsdk.style.expressions;
 
 import android.graphics.Color;
 
+import com.mapbox.mapboxsdk.style.layers.PropertyFactory;
+
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -57,6 +59,7 @@ import static com.mapbox.mapboxsdk.style.expressions.Expression.pi;
 import static com.mapbox.mapboxsdk.style.expressions.Expression.pow;
 import static com.mapbox.mapboxsdk.style.expressions.Expression.product;
 import static com.mapbox.mapboxsdk.style.expressions.Expression.properties;
+import static com.mapbox.mapboxsdk.style.expressions.Expression.raw;
 import static com.mapbox.mapboxsdk.style.expressions.Expression.rgb;
 import static com.mapbox.mapboxsdk.style.expressions.Expression.rgba;
 import static com.mapbox.mapboxsdk.style.expressions.Expression.round;
@@ -1164,5 +1167,56 @@ public class ExpressionTest {
     Object[] expected = new Object[] {"floor", 2.2f};
     Object[] actual = floor(literal(2.2f)).toArray();
     assertTrue("expression should match", Arrays.deepEquals(expected, actual));
+  }
+
+  @Test
+  public void testRaw() {
+    String raw = "[\"get\", ]";
+    Expression expected = get("");
+    assertEquals("expressions should match", raw(raw), expected);
+
+    raw = "[\"get\", key]";
+    expected = get("key");
+    assertEquals("expressions should match", raw(raw), expected);
+
+    expected = interpolate(linear(), zoom(),
+      stop(12, step(get("stroke-width"),
+        color(Color.BLACK),
+        stop(1f, color(Color.RED)),
+        stop(2f, color(Color.WHITE)),
+        stop(3f, color(Color.BLUE))
+      )),
+      stop(15, step(get("stroke-width"),
+        color(Color.BLACK),
+        stop(1f, color(Color.YELLOW)),
+        stop(2f, color(Color.LTGRAY)),
+        stop(3f, color(Color.CYAN))
+      )),
+      stop(18, step(get("stroke-width"),
+        color(Color.BLACK),
+        stop(1f, color(Color.WHITE)),
+        stop(2f, color(Color.GRAY)),
+        stop(3f, color(Color.GREEN))
+      ))
+    );
+    assertEquals("expressions should match", expected, raw(expected.toString()));
+
+    expected = interpolate(
+      exponential(2f), zoom(),
+      literal(5f), literal("rgba(0, 0, 0, 255)"),
+      literal(10.5f), literal("rgb(255, 0, 0)"),
+      literal(15), color(Color.GREEN),
+      literal(20), literal(PropertyFactory.colorToRgbaString(Color.BLUE)));
+    assertEquals("expressions should match", expected, raw(expected.toString()));
+
+    expected = match(get("property"), literal(""),
+      stop("layer1", "image1"),
+      stop("layer2", "image2"));
+    assertEquals("expressions should match", expected, raw(expected.toString()));
+
+    expected = match(get("property"), literal(""),
+      stop("layer1", 2),
+      stop("layer2", 2.7));
+    assertEquals("expressions should match", expected, raw(expected.toString()));
   }
 }
